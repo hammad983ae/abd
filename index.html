@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Video Player</title>
+  <link rel="preload" href="videos/video1.mp4" as="video" type="video/mp4" />
+  <style>
+    :root {
+      --bg: #fdf6ec;
+      --card: #ffffff;
+      --text: #2b2440;
+      --muted: #7a7290;
+      --ring: #ff7a59;
+      --shadow: 0 10px 30px rgba(43, 36, 64, 0.12);
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      justify-content: center;
+      padding: 24px 16px 40px;
+    }
+    main { width: 100%; max-width: 960px; }
+
+    .stage {
+      position: relative;
+      aspect-ratio: 16 / 9;
+      border-radius: 20px;
+      overflow: hidden;
+      background: #000;
+      box-shadow: var(--shadow);
+    }
+    .stage video {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0;
+      transition: opacity 350ms ease;
+    }
+    .stage video.active { opacity: 1; }
+
+    .buttons {
+      margin-top: 20px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+    }
+    @media (max-width: 640px) {
+      .buttons { grid-template-columns: repeat(2, 1fr); }
+    }
+    .btn {
+      appearance: none;
+      border: 0;
+      padding: 0;
+      background: var(--card);
+      border-radius: 16px;
+      overflow: hidden;
+      cursor: pointer;
+      text-align: left;
+      box-shadow: var(--shadow);
+      outline: 3px solid transparent;
+      outline-offset: 2px;
+      transition: transform 180ms ease, outline-color 180ms ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn:hover { transform: translateY(-3px); }
+    .btn:active { transform: scale(0.97); }
+    .btn:focus-visible, .btn[aria-pressed="true"] { outline-color: var(--ring); }
+    .btn img {
+      display: block;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      object-fit: cover;
+    }
+    .btn span {
+      display: block;
+      padding: 10px 12px;
+      font-weight: 600;
+      font-size: 15px;
+    }
+    .btn small { display: block; color: var(--muted); font-weight: 500; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="stage" id="stage"></div>
+    <div class="buttons" id="buttons"></div>
+  </main>
+
+  <script>
+    const videos = [
+      { src: "videos/video1.mp4", poster: "posters/video1.jpg", title: "Zoo" },
+      { src: "videos/video2.mp4", poster: "posters/video2.jpg", title: "Igloo" },
+      { src: "videos/video3.mp4", poster: "posters/video3.jpg", title: "Circus" },
+      { src: "videos/video4.mp4", poster: "posters/video4.jpg", title: "Kite" },
+    ];
+
+    const stage = document.getElementById("stage");
+    const bar = document.getElementById("buttons");
+
+    // One <video> per clip, stacked; switching just crossfades so there's no reload flicker.
+    const players = videos.map((v, i) => {
+      const el = document.createElement("video");
+      el.src = v.src;
+      el.poster = v.poster;
+      el.playsInline = true;
+      el.preload = i === 0 ? "auto" : "metadata";
+      el.controls = true;
+      stage.appendChild(el);
+      return el;
+    });
+
+    const buttons = videos.map((v, i) => {
+      const b = document.createElement("button");
+      b.className = "btn";
+      b.innerHTML = `<img src="${v.poster}" alt=""><span>${v.title}<small>Video ${i + 1}</small></span>`;
+      b.addEventListener("click", () => select(i, true));
+      bar.appendChild(b);
+      return b;
+    });
+
+    function select(index, play) {
+      players.forEach((p, i) => {
+        const on = i === index;
+        p.classList.toggle("active", on);
+        p.style.zIndex = on ? 1 : 0;
+        if (!on) { p.pause(); }
+        buttons[i].setAttribute("aria-pressed", on);
+      });
+      const p = players[index];
+      if (play) {
+        p.preload = "auto";
+        p.currentTime = 0;
+        p.play().catch(() => {});
+      }
+    }
+
+    select(0, false);
+  </script>
+</body>
+</html>
